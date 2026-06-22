@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドット絵エディタ</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --border: #e5e5e3;
+    --border-strong: #d0d0ce;
+    --text: #1a1a18;
+    --text-muted: #888884;
+    --accent: #3a3a38;
+    --accent-hover: #555552;
+    --danger: #c0392b;
+    --radius: 6px;
+    --panel: 220px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 44px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 14px; font-weight: 500; letter-spacing: 0.02em; }
+  .header-sep { flex: 1; }
+
+  /* ── ボタン共通 ── */
+  button {
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    padding: 5px 12px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: background 0.1s;
+  }
+  button:hover { background: var(--bg); }
+  button:active { transform: scale(0.97); }
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  button.danger { color: var(--danger); border-color: #e8c4c1; }
+  button.danger:hover { background: #fdf0ef; }
+  button:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+  /* ── メインレイアウト ── */
+  .app {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── 左パネル ── */
+  .panel {
+    width: var(--panel);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .panel-section {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  /* ツール選択 */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .tool-btn {
+    width: 100%;
+    height: 34px;
+    border-radius: var(--radius);
+    font-size: 12px;
+  }
+  .tool-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* グリッドサイズ */
+  .size-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .size-row label { color: var(--text-muted); font-size: 12px; flex-shrink: 0; }
+  .size-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .size-val { font-size: 12px; font-weight: 500; min-width: 38px; text-align: right; }
+
+  /* カラーパレット */
+  .color-preview {
+    width: 100%;
+    height: 28px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 3px;
+    margin-bottom: 6px;
+  }
+  .swatch {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: transform 0.1s;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.selected { border-color: var(--text); }
+
+  input[type=color] {
+    width: 100%;
+    height: 28px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 2px;
+    cursor: pointer;
+    background: var(--surface);
+  }
+
+  /* 画像アップロード */
+  #drop-zone {
+    border: 1.5px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.6;
+    transition: background 0.15s;
+  }
+  #drop-zone:hover { background: var(--bg); }
+  #drop-zone svg { display: block; margin: 0 auto 4px; }
+
+  /* 変換設定 */
+  .method-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .method-btn {
+    flex: 1;
+    height: 26px;
+    font-size: 11px;
+    padding: 0;
+  }
+  .method-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* ── キャンバスエリア ── */
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto;
+    background: var(--bg);
+    position: relative;
+  }
+
+  #canvas-wrap {
+    position: relative;
+    display: inline-block;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+  }
+
+  #canvas-bg, #canvas-main, #canvas-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    display: block;
+  }
+  #canvas-bg { z-index: 0; pointer-events: none; }
+  #canvas-main { z-index: 1; pointer-events: none; }
+  #canvas-overlay { z-index: 2; cursor: crosshair; }
+  #canvas-wrap canvas:last-child { position: relative; } /* overlayだけrelativeにしてwrapサイズを決める */
+
+  /* 市松模様（透過背景） */
+  #canvas-bg { background:
+    repeating-conic-gradient(#ccc 0% 25%, #eee 0% 50%)
+    0 0 / 10px 10px;
+  }
+
+  /* ズームコントロール */
+  .zoom-controls {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .zoom-controls button {
+    border: none;
+    background: none;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #zoom-label { min-width: 40px; text-align: center; color: var(--text-muted); }
+
+  /* ステータスバー */
+  .statusbar {
+    height: 24px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .statusbar span b { color: var(--text); font-weight: 500; }
+
+  /* モーダル（ドロップ案内） */
+  #start-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(247,247,245,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .start-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 32px;
+    text-align: center;
+    pointer-events: all;
+  }
+  .start-card p { color: var(--text-muted); font-size: 12px; margin-top: 6px; }
+  .start-actions { display: flex; gap: 8px; margin-top: 14px; justify-content: center; }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header>
+  <h1>ドット絵エディタ</h1>
+  <div class="header-sep"></div>
+  <button id="btn-undo" disabled title="Ctrl+Z">↩ 元に戻す</button>
+  <button id="btn-clear" class="danger">クリア</button>
+  <button id="btn-download" class="primary">↓ PNG保存</button>
+</header>
+
+<!-- メイン -->
+<div class="app">
+
+  <!-- 左パネル -->
+  <div class="panel">
+
+    <!-- ツール -->
+    <div class="panel-section">
+      <div class="panel-label">ツール</div>
+      <div class="tool-grid">
+        <button class="tool-btn active" data-tool="pen">✏️ ペン</button>
+        <button class="tool-btn" data-tool="fill">🪣 塗り潰し</button>
+        <button class="tool-btn" data-tool="erase">🧹 消しゴム</button>
+        <button class="tool-btn" data-tool="pick">💉 スポイト</button>
+      </div>
+    </div>
+
+    <!-- グリッドサイズ -->
+    <div class="panel-section">
+      <div class="panel-label">グリッドサイズ</div>
+      <div class="size-row">
+        <label>列</label>
+        <input type="range" id="cols-slider" min="4" max="256" value="32" step="1">
+        <span class="size-val" id="cols-val">32</span>
+      </div>
+      <div class="size-row">
+        <label>行</label>
+        <input type="range" id="rows-slider" min="4" max="256" value="32" step="1">
+        <span class="size-val" id="rows-val">32</span>
+      </div>
+      <button id="btn-resize" style="width:100%; margin-top:4px;">適用</button>
+    </div>
+
+    <!-- カラー -->
+    <div class="panel-section">
+      <div class="panel-label">カラー</div>
+      <div class="palette-grid" id="palette"></div>
+      <input type="color" id="color-picker" value="#3a3a38">
+    </div>
+
+    <!-- 画像から変換 -->
+    <div class="panel-section">
+      <div class="panel-label">画像から変換</div>
+      <div id="drop-zone">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2M12 4v12m-4-4l4-4 4 4"/>
+        </svg>
+        クリックまたは<br>ドロップで画像を選択
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+      </div>
+      <div style="margin-top:8px;">
+        <div class="panel-label" style="margin-bottom:4px;">変換方式</div>
+        <div class="method-row">
+          <button class="method-btn active" data-method="mode">最頻色</button>
+          <button class="method-btn" data-method="avg">平均色</button>
+        </div>
+        <button id="btn-convert" style="width:100%;" disabled>変換する</button>
+      </div>
+    </div>
+
+    <!-- グリッド表示 -->
+    <div class="panel-section">
+      <div class="panel-label">表示</div>
+      <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="show-grid" checked style="accent-color:var(--accent)">
+        グリッド線を表示
+      </label>
+    </div>
+
+  </div>
+
+  <!-- キャンバスエリア -->
+  <div class="canvas-area" id="canvas-area">
+    <div id="canvas-wrap">
+      <canvas id="canvas-bg"></canvas>
+      <canvas id="canvas-main"></canvas>
+      <canvas id="canvas-overlay"></canvas>
+    </div>
+
+    <!-- スタートオーバーレイ -->
+    <div id="start-overlay">
+      <div class="start-card">
+        <div style="font-size:15px; font-weight:500;">はじめましょう</div>
+        <p>白紙から描くか、<br>画像をドット絵に変換できます</p>
+        <div class="start-actions">
+          <button id="btn-new" class="primary">白紙で始める</button>
+          <button id="btn-load-img" onclick="document.getElementById('file-input').click()">画像を読み込む</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ズーム -->
+    <div class="zoom-controls">
+      <button id="btn-zoom-out">−</button>
+      <span id="zoom-label">100%</span>
+      <button id="btn-zoom-in">＋</button>
+    </div>
+  </div>
+</div>
+
+<!-- ステータスバー -->
+<div class="statusbar">
+  <span>位置: <b id="stat-pos">—</b></span>
+  <span>色: <b id="stat-color">—</b></span>
+  <span>グリッド: <b id="stat-grid">32×32</b></span>
+</div>
+
+<script>
+// ── 状態 ──────────────────────────────────────────────
+const PALETTE_COLORS = [
+  '#ffffff','#d0d0d0','#888888','#444444','#1a1a18','#000000',
+  '#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db',
+  '#9b59b6','#e91e8c','#ff7675','#fdcb6e','#55efc4','#74b9ff',
+  '#a29bfe','#fd79a8','#dfe6e9','#b2bec3','#636e72','#2d3436',
+  '#c0392b','#d35400','#f39c12','#27ae60','#16a085','#2980b9',
+  '#8e44ad','#ff006e','#ff8c00','#00b894','#0984e3','#6c5ce7',
+  '#fab1a0','#ffeaa7','#81ecec','#a29bfe','#fd79a8','#636e72',
+  '#2c3e50','#34495e','#7f8c8d','#95a5a6','#bdc3c7','#ecf0f1',
+];
+
+let cols = 32, rows = 32;
+let cells = [];          // cells[row][col] = '#rrggbb' or null
+let history = [];
+let zoom = 1;
+let currentTool = 'pen';
+let currentColor = '#3a3a38';
+let convertMethod = 'mode';
+let showGrid = true;
+let uploadedImage = null;
+let isPainting = false;
+let lastCell = null;
+let started = false;
+
+// ── DOM ───────────────────────────────────────────────
+const cBg  = document.getElementById('canvas-bg');
+const cMain= document.getElementById('canvas-main');
+const cOv  = document.getElementById('canvas-overlay');
+const wrap = document.getElementById('canvas-wrap');
+const overlay = document.getElementById('start-overlay');
+const statPos   = document.getElementById('stat-pos');
+const statColor = document.getElementById('stat-color');
+const statGrid  = document.getElementById('stat-grid');
+const zoomLabel = document.getElementById('zoom-label');
+const colorPicker = document.getElementById('color-picker');
+
+// 1マスのピクセル数をグリッドサイズに応じて自動調整
+function cellPx() {
+  const n = Math.max(cols, rows);
+  if (n <= 32)  return 14;
+  if (n <= 64)  return 8;
+  if (n <= 128) return 4;
+  return 2;
+}
+
+// ── 初期化 ────────────────────────────────────────────
+function initCells(c, r, keepOld) {
+  const old = cells;
+  cells = Array.from({length: r}, (_, ri) =>
+    Array.from({length: c}, (_, ci) =>
+      keepOld && old[ri] && old[ri][ci] !== undefined ? old[ri][ci] : null
+    )
+  );
+  cols = c; rows = r;
+  document.getElementById('stat-grid').textContent = `${cols}×${rows}`;
+}
+
+function canvasSize() {
+  const px = cellPx();
+  return { w: cols * px, h: rows * px };
+}
+
+function resizeCanvases() {
+  const {w, h} = canvasSize();
+  [cBg, cMain, cOv].forEach(c => { c.width = w; c.height = h; });
+  wrap.style.width  = (w * zoom) + 'px';
+  wrap.style.height = (h * zoom) + 'px';
+  [cBg, cMain, cOv].forEach(c => {
+    c.style.width  = (w * zoom) + 'px';
+    c.style.height = (h * zoom) + 'px';
+  });
+  drawAll();
+}
+
+function drawAll() {
+  drawGrid();
+  drawCells();
+}
+
+function drawCells() {
+  const px = cellPx();
+  const ctx = cMain.getContext('2d');
+  ctx.clearRect(0, 0, cMain.width, cMain.height);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (cells[r][c]) {
+        ctx.fillStyle = cells[r][c];
+        ctx.fillRect(c * px, r * px, px, px);
+      }
+    }
+  }
+}
+
+function drawGrid() {
+  const px = cellPx();
+  const ctx = cBg.getContext('2d');
+  ctx.clearRect(0, 0, cBg.width, cBg.height);
+  // 市松模様（透過）
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      ctx.fillStyle = (r + c) % 2 === 0 ? '#cccccc' : '#eeeeee';
+      ctx.fillRect(c * px, r * px, px, px);
+    }
+  }
+  if (!showGrid) return;
+  ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+  ctx.lineWidth = 0.5;
+  for (let c = 0; c <= cols; c++) {
+    ctx.beginPath();
+    ctx.moveTo(c * px, 0);
+    ctx.lineTo(c * px, rows * px);
+    ctx.stroke();
+  }
+  for (let r = 0; r <= rows; r++) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * px);
+    ctx.lineTo(cols * px, r * px);
+    ctx.stroke();
+  }
+}
+
+function drawOverlayCell(col, row) {
+  const px = cellPx();
+  const ctx = cOv.getContext('2d');
+  ctx.clearRect(0, 0, cOv.width, cOv.height);
+  if (col < 0 || col >= cols || row < 0 || row >= rows) return;
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillRect(col * px, row * px, px, px);
+  ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(col * px + 0.5, row * px + 0.5, px - 1, px - 1);
+}
+
+// ── イベント：キャンバス ───────────────────────────────
+function getCell(e) {
+  const px = cellPx();
+  const rect = cOv.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / zoom;
+  const y = (e.clientY - rect.top)  / zoom;
+  return { col: Math.floor(x / px), row: Math.floor(y / px) };
+}
+
+function applyTool(col, row) {
+  if (col < 0 || col >= cols || row < 0 || row >= rows) return;
+  if (currentTool === 'pen') {
+    cells[row][col] = currentColor;
+    drawCells();
+  } else if (currentTool === 'erase') {
+    cells[row][col] = null;
+    drawCells();
+  } else if (currentTool === 'pick') {
+    const c = cells[row][col];
+    if (c) { setColor(c); }
+  } else if (currentTool === 'fill') {
+    floodFill(col, row, currentColor);
+    drawCells();
+  }
+}
+
+function floodFill(startCol, startRow, newColor) {
+  const target = cells[startRow][startCol];
+  if (target === newColor) return;
+  const stack = [[startCol, startRow]];
+  while (stack.length) {
+    const [c, r] = stack.pop();
+    if (c < 0 || c >= cols || r < 0 || r >= rows) continue;
+    if (cells[r][c] !== target) continue;
+    cells[r][c] = newColor;
+    stack.push([c+1,r],[c-1,r],[c,r+1],[c,r-1]);
+  }
+}
+
+cOv.addEventListener('mousedown', e => {
+  if (!started) return;
+  pushHistory();
+  isPainting = true;
+  const {col, row} = getCell(e);
+  lastCell = {col, row};
+  applyTool(col, row);
+});
+cOv.addEventListener('mousemove', e => {
+  if (!started) return;
+  const {col, row} = getCell(e);
+  drawOverlayCell(col, row);
+  statPos.textContent = `${col+1}, ${row+1}`;
+  const c = cells[row] && cells[row][col];
+  statColor.textContent = c || '—';
+  if (!isPainting) return;
+  if (lastCell && lastCell.col === col && lastCell.row === row) return;
+  lastCell = {col, row};
+  applyTool(col, row);
+});
+cOv.addEventListener('mouseup',   () => { isPainting = false; lastCell = null; });
+cOv.addEventListener('mouseleave',() => {
+  isPainting = false;
+  cOv.getContext('2d').clearRect(0,0,cOv.width,cOv.height);
+  statPos.textContent = '—';
+});
+
+// タッチ対応
+cOv.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (!started) return;
+  pushHistory();
+  isPainting = true;
+  const t = e.touches[0];
+  const {col, row} = getCell(t);
+  applyTool(col, row);
+}, {passive: false});
+cOv.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!isPainting || !started) return;
+  const t = e.touches[0];
+  const {col, row} = getCell(t);
+  applyTool(col, row);
+}, {passive: false});
+cOv.addEventListener('touchend', () => { isPainting = false; });
+
+// ── ヒストリー ────────────────────────────────────────
+function pushHistory() {
+  history.push(cells.map(r => [...r]));
+  if (history.length > 50) history.shift();
+  document.getElementById('btn-undo').disabled = false;
+}
+function undo() {
+  if (!history.length) return;
+  cells = history.pop();
+  drawCells();
+  if (!history.length) document.getElementById('btn-undo').disabled = true;
+}
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+});
+document.getElementById('btn-undo').addEventListener('click', undo);
+
+// ── カラーパレット ────────────────────────────────────
+function buildPalette() {
+  const grid = document.getElementById('palette');
+  grid.innerHTML = '';
+  PALETTE_COLORS.forEach(hex => {
+    const s = document.createElement('div');
+    s.className = 'swatch';
+    s.style.background = hex;
+    s.title = hex;
+    s.addEventListener('click', () => setColor(hex));
+    grid.appendChild(s);
+  });
+}
+function setColor(hex) {
+  currentColor = hex;
+  colorPicker.value = hex;
+  document.querySelectorAll('.swatch').forEach(s => {
+    s.classList.toggle('selected', s.style.background === hexToRgb(hex) || s.style.background === hex);
+  });
+  if (currentTool === 'pick' || currentTool === 'erase') {
+    setTool('pen');
+  }
+}
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+colorPicker.addEventListener('input', e => setColor(e.target.value));
+
+// ── ツール選択 ────────────────────────────────────────
+function setTool(t) {
+  currentTool = t;
+  document.querySelectorAll('.tool-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tool === t);
+  });
+}
+document.querySelectorAll('.tool-btn').forEach(b => {
+  b.addEventListener('click', () => setTool(b.dataset.tool));
+});
+
+// ── グリッドサイズ ────────────────────────────────────
+const colsSlider = document.getElementById('cols-slider');
+const rowsSlider = document.getElementById('rows-slider');
+colsSlider.addEventListener('input', () => document.getElementById('cols-val').textContent = colsSlider.value);
+rowsSlider.addEventListener('input', () => document.getElementById('rows-val').textContent = rowsSlider.value);
+document.getElementById('btn-resize').addEventListener('click', () => {
+  pushHistory();
+  initCells(parseInt(colsSlider.value), parseInt(rowsSlider.value), true);
+  resizeCanvases();
+});
+
+// ── グリッド表示切替 ──────────────────────────────────
+document.getElementById('show-grid').addEventListener('change', e => {
+  showGrid = e.target.checked;
+  drawGrid();
+});
+
+// ── ズーム ────────────────────────────────────────────
+function setZoom(z) {
+  zoom = Math.max(0.5, Math.min(8, z));
+  const {w, h} = canvasSize();
+  wrap.style.width  = (w * zoom) + 'px';
+  wrap.style.height = (h * zoom) + 'px';
+  [cBg, cMain, cOv].forEach(c => {
+    c.style.width  = (w * zoom) + 'px';
+    c.style.height = (h * zoom) + 'px';
+  });
+  zoomLabel.textContent = Math.round(zoom * 100) + '%';
+}
+document.getElementById('btn-zoom-in').addEventListener('click',  () => setZoom(zoom * 1.5));
+document.getElementById('btn-zoom-out').addEventListener('click', () => setZoom(zoom / 1.5));
+
+// マウスホイールズーム
+document.getElementById('canvas-area').addEventListener('wheel', e => {
+  if (!e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  setZoom(e.deltaY < 0 ? zoom * 1.2 : zoom / 1.2);
+}, {passive: false});
+
+// ── クリア ────────────────────────────────────────────
+document.getElementById('btn-clear').addEventListener('click', () => {
+  if (!started) return;
+  pushHistory();
+  cells = cells.map(r => r.map(() => null));
+  drawCells();
+});
+
+// ── ダウンロード ──────────────────────────────────────
+document.getElementById('btn-download').addEventListener('click', () => {
+  const out = document.createElement('canvas');
+  const px = Math.max(1, Math.round(512 / Math.max(cols, rows)));
+  out.width  = cols * px;
+  out.height = rows * px;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, out.width, out.height);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (cells[r][c]) {
+        ctx.fillStyle = cells[r][c];
+        ctx.fillRect(c * px, r * px, px, px);
+      }
+    }
+  }
+  const a = document.createElement('a');
+  a.download = 'pixel-art.png';
+  a.href = out.toDataURL('image/png');
+  a.click();
+});
+
+// ── 画像変換 ──────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = '#f0f0ee'; });
+dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.style.background = '';
+  loadImageFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => loadImageFile(e.target.files[0]));
+
+function loadImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      uploadedImage = img;
+      document.getElementById('btn-convert').disabled = false;
+      dropZone.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="display:block;margin:0 auto 4px"><path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2M12 4v12m-4-4l4-4 4 4"/></svg>${file.name}`;
+      if (!started) startEditor();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+document.querySelectorAll('.method-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    convertMethod = b.dataset.method;
+    document.querySelectorAll('.method-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+
+document.getElementById('btn-convert').addEventListener('click', () => {
+  if (!uploadedImage) return;
+  pushHistory();
+  convertImage(uploadedImage);
+});
+
+function convertImage(img) {
+  if (!started) startEditor();
+  const off = document.createElement('canvas');
+  off.width = cols; off.height = rows;
+  const ctx = off.getContext('2d');
+  ctx.drawImage(img, 0, 0, cols, rows);
+  const data = ctx.getImageData(0, 0, cols, rows).data;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const i = (r * cols + c) * 4;
+      cells[r][c] = `#${[data[i],data[i+1],data[i+2]].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
+    }
+  }
+  if (convertMethod === 'avg') {
+    // 平均色はすでに縮小時に自動でブレンドされている
+    // ここでは追加で量子化不要
+  } else {
+    // 最頻色：より高解像度から集計
+    const hi = document.createElement('canvas');
+    const sx = Math.min(1024, img.width);
+    const sy = Math.round(img.height * (sx / img.width));
+    hi.width = sx; hi.height = sy;
+    const hctx = hi.getContext('2d');
+    hctx.drawImage(img, 0, 0, sx, sy);
+    const hdata = hctx.getImageData(0, 0, sx, sy).data;
+    const cw = sx / cols, ch = sy / rows;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = Math.round(c * cw), y = Math.round(r * ch);
+        const w = Math.round(cw), h = Math.round(ch);
+        const map = {};
+        let best = 0, bestColor = null;
+        for (let py = y; py < y+h && py < sy; py++) {
+          for (let px = x; px < x+w && px < sx; px++) {
+            const i = (py * sx + px) * 4;
+            const key = ((hdata[i]>>4)<<8)|((hdata[i+1]>>4)<<4)|(hdata[i+2]>>4);
+            map[key] = (map[key]||0) + 1;
+            if (map[key] > best) { best = map[key]; bestColor = [hdata[i],hdata[i+1],hdata[i+2]]; }
+          }
+        }
+        if (bestColor) cells[r][c] = `#${bestColor.map(v=>v.toString(16).padStart(2,'0')).join('')}`;
+      }
+    }
+  }
+  drawCells();
+}
+
+// ── スタート ──────────────────────────────────────────
+function startEditor() {
+  started = true;
+  overlay.style.display = 'none';
+  initCells(cols, rows, false);
+  resizeCanvases();
+}
+
+document.getElementById('btn-new').addEventListener('click', () => {
+  startEditor();
+});
+document.getElementById('btn-load-img').addEventListener('click', () => {
+  fileInput.click();
+});
+
+// ── 起動 ─────────────────────────────────────────────
+buildPalette();
+setColor('#3a3a38');
+initCells(cols, rows, false);
+resizeCanvases();
+</script>
+</body>
+</html>
