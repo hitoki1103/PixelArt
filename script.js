@@ -277,10 +277,40 @@ document.querySelectorAll('.tool-btn').forEach(b => {
 });
 
 // ── グリッドサイズ ────────────────────────────────────
+const bothSlider = document.getElementById('both-slider');
 const colsSlider = document.getElementById('cols-slider');
 const rowsSlider = document.getElementById('rows-slider');
-colsSlider.addEventListener('input', () => document.getElementById('cols-val').textContent = colsSlider.value);
-rowsSlider.addEventListener('input', () => document.getElementById('rows-val').textContent = rowsSlider.value);
+const bothVal = document.getElementById('both-val');
+const colsVal = document.getElementById('cols-val');
+const rowsVal = document.getElementById('rows-val');
+
+function clampSize(v) { return Math.max(4, Math.min(256, Math.round(v) || 4)); }
+
+bothSlider.addEventListener('input', () => {
+  const v = bothSlider.value;
+  bothVal.value = v;
+  colsSlider.value = v; colsVal.value = v;
+  rowsSlider.value = v; rowsVal.value = v;
+});
+bothVal.addEventListener('change', () => {
+  const v = clampSize(bothVal.value);
+  bothVal.value = v; bothSlider.value = v;
+  colsSlider.value = v; colsVal.value = v;
+  rowsSlider.value = v; rowsVal.value = v;
+});
+
+colsSlider.addEventListener('input', () => { colsVal.value = colsSlider.value; });
+colsVal.addEventListener('change', () => {
+  const v = clampSize(colsVal.value);
+  colsVal.value = v; colsSlider.value = v;
+});
+
+rowsSlider.addEventListener('input', () => { rowsVal.value = rowsSlider.value; });
+rowsVal.addEventListener('change', () => {
+  const v = clampSize(rowsVal.value);
+  rowsVal.value = v; rowsSlider.value = v;
+});
+
 document.getElementById('btn-resize').addEventListener('click', () => {
   pushHistory();
   initCells(parseInt(colsSlider.value), parseInt(rowsSlider.value), true);
