@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドット絵エディタ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header>
+  <h1>ドット絵エディタ</h1>
+  <div class="header-sep"></div>
+  <button id="btn-undo" disabled title="Ctrl+Z">↩ 元に戻す</button>
+  <button id="btn-clear" class="danger">クリア</button>
+  <button id="btn-download" class="primary">↓ PNG保存</button>
+</header>
+
+<!-- メイン -->
+<div class="app">
+
+  <!-- 左パネル -->
+  <div class="panel">
+
+    <!-- ツール -->
+    <div class="panel-section">
+      <div class="panel-label">ツール</div>
+      <div class="tool-grid">
+        <button class="tool-btn active" data-tool="pen">✏️ ペン</button>
+        <button class="tool-btn" data-tool="fill">🪣 塗り潰し</button>
+        <button class="tool-btn" data-tool="erase">🧹 消しゴム</button>
+        <button class="tool-btn" data-tool="pick">💉 スポイト</button>
+      </div>
+    </div>
+
+    <!-- グリッドサイズ -->
+    <div class="panel-section">
+      <div class="panel-label">グリッドサイズ</div>
+      <div class="size-row">
+        <label>列</label>
+        <input type="range" id="cols-slider" min="4" max="256" value="32" step="1">
+        <span class="size-val" id="cols-val">32</span>
+      </div>
+      <div class="size-row">
+        <label>行</label>
+        <input type="range" id="rows-slider" min="4" max="256" value="32" step="1">
+        <span class="size-val" id="rows-val">32</span>
+      </div>
+      <button id="btn-resize" style="width:100%; margin-top:4px;">適用</button>
+    </div>
+
+    <!-- カラー -->
+    <div class="panel-section">
+      <div class="panel-label">カラー</div>
+      <div class="palette-grid" id="palette"></div>
+      <input type="color" id="color-picker" value="#3a3a38">
+    </div>
+
+    <!-- 画像から変換 -->
+    <div class="panel-section">
+      <div class="panel-label">画像から変換</div>
+      <div id="drop-zone">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2M12 4v12m-4-4l4-4 4 4"/>
+        </svg>
+        クリックまたは<br>ドロップで画像を選択
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+      </div>
+      <div style="margin-top:8px;">
+        <div class="panel-label" style="margin-bottom:4px;">変換方式</div>
+        <div class="method-row">
+          <button class="method-btn active" data-method="mode">最頻色</button>
+          <button class="method-btn" data-method="avg">平均色</button>
+        </div>
+        <button id="btn-convert" style="width:100%;" disabled>変換する</button>
+      </div>
+    </div>
+
+    <!-- グリッド表示 -->
+    <div class="panel-section">
+      <div class="panel-label">表示</div>
+      <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="show-grid" checked style="accent-color:var(--accent)">
+        グリッド線を表示
+      </label>
+    </div>
+
+  </div>
+
+  <!-- キャンバスエリア -->
+  <div class="canvas-area" id="canvas-area">
+    <div id="canvas-wrap">
+      <canvas id="canvas-bg"></canvas>
+      <canvas id="canvas-main"></canvas>
+      <canvas id="canvas-overlay"></canvas>
+    </div>
+
+    <!-- スタートオーバーレイ -->
+    <div id="start-overlay">
+      <div class="start-card">
+        <div style="font-size:15px; font-weight:500;">はじめましょう</div>
+        <p>白紙から描くか、<br>画像をドット絵に変換できます</p>
+        <div class="start-actions">
+          <button id="btn-new" class="primary">白紙で始める</button>
+          <button id="btn-load-img" onclick="document.getElementById('file-input').click()">画像を読み込む</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ズーム -->
+    <div class="zoom-controls">
+      <button id="btn-zoom-out">−</button>
+      <span id="zoom-label">100%</span>
+      <button id="btn-zoom-in">＋</button>
+    </div>
+  </div>
+</div>
+
+<!-- ステータスバー -->
+<div class="statusbar">
+  <span>位置: <b id="stat-pos">—</b></span>
+  <span>色: <b id="stat-color">—</b></span>
+  <span>グリッド: <b id="stat-grid">32×32</b></span>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
