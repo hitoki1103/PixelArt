@@ -11,7 +11,7 @@
   --accent-hover: #555552;
   --danger: #c0392b;
   --radius: 6px;
-  --panel: 220px;
+  --panel: 260px;
 }
 
 body {
@@ -84,9 +84,13 @@ button:disabled { opacity: 0.4; cursor: default; transform: none; }
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+.panel::-webkit-scrollbar {
+  display: none;
 }
 .panel-section {
-  padding: 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border);
 }
 .panel-label {
