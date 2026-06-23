@@ -141,6 +141,9 @@ button:disabled { opacity: 0.4; cursor: default; transform: none; }
   background: var(--bg);
   color: var(--text);
 }
+.panel-toggle:active {
+  transform: translateY(-50%);
+}
 .panel-section {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
