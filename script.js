@@ -73,7 +73,7 @@ function updateScrollPadding() {
   const {w, h} = canvasSize();
   const canvasW = w * zoom;
   const canvasH = h * zoom;
-  const padX = Math.max(areaW * 0.5, canvasW * 0.5);
+  const padX = Math.max(areaW, canvasW);
   const padY = Math.max(areaH * 0.5, canvasH * 0.5);
   scrollPad.style.padding = `${padY}px ${padX}px`;
 }
