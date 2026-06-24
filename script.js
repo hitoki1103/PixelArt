@@ -286,6 +286,31 @@ const rowsVal = document.getElementById('rows-val');
 
 function clampSize(v) { return Math.max(4, Math.min(256, Math.round(v) || 4)); }
 
+function setSizeAll(v) {
+  bothSlider.value = v; bothVal.value = v;
+  colsSlider.value = v; colsVal.value = v;
+  rowsSlider.value = v; rowsVal.value = v;
+}
+
+function updatePresetHighlight() {
+  const c = parseInt(colsSlider.value), r = parseInt(rowsSlider.value);
+  document.querySelectorAll('.preset-btn').forEach(b => {
+    const s = parseInt(b.dataset.size);
+    b.classList.toggle('active', s === c && s === r);
+  });
+}
+
+document.querySelectorAll('.preset-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const v = parseInt(b.dataset.size);
+    setSizeAll(v);
+    pushHistory();
+    initCells(v, v, true);
+    resizeCanvases();
+    updatePresetHighlight();
+  });
+});
+
 bothSlider.addEventListener('input', () => {
   const v = bothSlider.value;
   bothVal.value = v;
@@ -315,6 +340,7 @@ document.getElementById('btn-resize').addEventListener('click', () => {
   pushHistory();
   initCells(parseInt(colsSlider.value), parseInt(rowsSlider.value), true);
   resizeCanvases();
+  updatePresetHighlight();
 });
 
 // ── グリッド表示切替 ──────────────────────────────────
