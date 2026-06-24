@@ -312,6 +312,7 @@ input, select, textarea {
   height: 26px;
   font-size: 11px;
   padding: 0;
+  justify-content: center;
 }
 .method-btn.active {
   background: var(--accent);
