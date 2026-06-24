@@ -251,10 +251,8 @@ cOv.addEventListener('mousemove', e => {
   applyToolLine(lastCell.col, lastCell.row, col, row);
   lastCell = {col, row};
 });
-cOv.addEventListener('mouseup',   () => { isPainting = false; lastCell = null; });
+document.addEventListener('mouseup', () => { isPainting = false; lastCell = null; });
 cOv.addEventListener('mouseleave',() => {
-  isPainting = false;
-  lastCell = null;
   cOv.getContext('2d').clearRect(0,0,cOv.width,cOv.height);
   statPos.textContent = '—';
 });
