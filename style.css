@@ -196,6 +196,15 @@ button:disabled { opacity: 0.4; cursor: default; transform: none; }
   border-color: var(--accent);
 }
 
+.detect-line-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
 /* 描画サイズ */
 .brush-size-row {
   display: flex;

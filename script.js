@@ -24,6 +24,7 @@ let lastCell = null;
 let started = false;
 let brushSize = 1;
 let drawStyle = 'normal';
+let detectLine = false;
 
 // ── DOM ───────────────────────────────────────────────
 const cBg  = document.getElementById('canvas-bg');
@@ -219,11 +220,57 @@ function applyToolLine(fromCol, fromRow, toCol, toRow) {
   drawCells();
 }
 
+function brushColRange(col) {
+  const half = Math.floor(brushSize / 2);
+  return { c1: Math.max(0, col - half), c2: Math.min(cols - 1, col - half + brushSize - 1) };
+}
+function brushRowRange(row) {
+  const half = Math.floor(brushSize / 2);
+  return { r1: Math.max(0, row - half), r2: Math.min(rows - 1, row - half + brushSize - 1) };
+}
+
+function hasFilledCellInCols(r, c1, c2) {
+  for (let c = c1; c <= c2; c++) {
+    if (cells[r] && cells[r][c]) return true;
+  }
+  return false;
+}
+function hasFilledCellInRows(c, r1, r2) {
+  for (let r = r1; r <= r2; r++) {
+    if (cells[r] && cells[r][c]) return true;
+  }
+  return false;
+}
+
 function paintStyle(col, row, value) {
   if (drawStyle === 'col' && (currentTool === 'pen' || currentTool === 'erase')) {
-    for (let r = 0; r < rows; r++) paintBrush(col, r, value);
+    if (detectLine) {
+      const {c1, c2} = brushColRange(col);
+      for (let r = row; r >= 0; r--) {
+        if (hasFilledCellInCols(r, c1, c2)) break;
+        paintBrush(col, r, value);
+      }
+      for (let r = row + 1; r < rows; r++) {
+        if (hasFilledCellInCols(r, c1, c2)) break;
+        paintBrush(col, r, value);
+      }
+    } else {
+      for (let r = 0; r < rows; r++) paintBrush(col, r, value);
+    }
   } else if (drawStyle === 'row' && (currentTool === 'pen' || currentTool === 'erase')) {
-    for (let c = 0; c < cols; c++) paintBrush(c, row, value);
+    if (detectLine) {
+      const {r1, r2} = brushRowRange(row);
+      for (let c = col; c >= 0; c--) {
+        if (hasFilledCellInRows(c, r1, r2)) break;
+        paintBrush(c, row, value);
+      }
+      for (let c = col + 1; c < cols; c++) {
+        if (hasFilledCellInRows(c, r1, r2)) break;
+        paintBrush(c, row, value);
+      }
+    } else {
+      for (let c = 0; c < cols; c++) paintBrush(c, row, value);
+    }
   } else {
     paintBrush(col, row, value);
   }
@@ -356,11 +403,23 @@ colorPicker.addEventListener('input', e => setColor(e.target.value));
 
 // ── 描画スタイル ──────────────────────────────────────
 const drawStyleSection = document.getElementById('draw-style-section');
+const detectLineLabel = document.getElementById('detect-line-label');
+const detectLineCheck = document.getElementById('detect-line');
+
+function updateDetectLineVisibility() {
+  detectLineLabel.style.display = (drawStyle === 'col' || drawStyle === 'row') ? 'flex' : 'none';
+}
+
 document.querySelectorAll('.style-btn').forEach(b => {
   b.addEventListener('click', () => {
     drawStyle = b.dataset.style;
     document.querySelectorAll('.style-btn').forEach(x => x.classList.toggle('active', x.dataset.style === drawStyle));
+    updateDetectLineVisibility();
   });
+});
+
+detectLineCheck.addEventListener('change', () => {
+  detectLine = detectLineCheck.checked;
 });
 
 function updateDrawStyleVisibility() {
