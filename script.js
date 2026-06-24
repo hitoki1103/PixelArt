@@ -306,7 +306,7 @@ function floodFill(startCol, startRow, newColor) {
 }
 
 cOv.addEventListener('mousedown', e => {
-  if (!started) return;
+  if (!started || e.button !== 0) return;
   pushHistory();
   isPainting = true;
   const {col, row} = getCell(e);
