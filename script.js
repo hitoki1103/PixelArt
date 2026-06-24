@@ -180,20 +180,40 @@ function paintBrush(col, row, value) {
   }
 }
 
-function applyTool(col, row) {
+function interpolateCells(c0, r0, c1, r1) {
+  const points = [];
+  let dx = Math.abs(c1 - c0), dy = Math.abs(r1 - r0);
+  const sx = c0 < c1 ? 1 : -1, sy = r0 < r1 ? 1 : -1;
+  let err = dx - dy;
+  while (true) {
+    points.push({col: c0, row: r0});
+    if (c0 === c1 && r0 === r1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; c0 += sx; }
+    if (e2 < dx)  { err += dx; r0 += sy; }
+  }
+  return points;
+}
+
+function applyToolLine(fromCol, fromRow, toCol, toRow) {
+  const points = interpolateCells(fromCol, fromRow, toCol, toRow);
+  for (const {col, row} of points) {
+    applyToolSingle(col, row);
+  }
+  drawCells();
+}
+
+function applyToolSingle(col, row) {
   if (col < 0 || col >= cols || row < 0 || row >= rows) return;
   if (currentTool === 'pen') {
     paintBrush(col, row, currentColor);
-    drawCells();
   } else if (currentTool === 'erase') {
     paintBrush(col, row, null);
-    drawCells();
   } else if (currentTool === 'pick') {
     const c = cells[row][col];
     if (c) { setColor(c); }
   } else if (currentTool === 'fill') {
     floodFill(col, row, currentColor);
-    drawCells();
   }
 }
 
@@ -216,7 +236,8 @@ cOv.addEventListener('mousedown', e => {
   isPainting = true;
   const {col, row} = getCell(e);
   lastCell = {col, row};
-  applyTool(col, row);
+  applyToolSingle(col, row);
+  drawCells();
 });
 cOv.addEventListener('mousemove', e => {
   if (!started) return;
@@ -227,12 +248,13 @@ cOv.addEventListener('mousemove', e => {
   statColor.textContent = c || '—';
   if (!isPainting) return;
   if (lastCell && lastCell.col === col && lastCell.row === row) return;
+  applyToolLine(lastCell.col, lastCell.row, col, row);
   lastCell = {col, row};
-  applyTool(col, row);
 });
 cOv.addEventListener('mouseup',   () => { isPainting = false; lastCell = null; });
 cOv.addEventListener('mouseleave',() => {
   isPainting = false;
+  lastCell = null;
   cOv.getContext('2d').clearRect(0,0,cOv.width,cOv.height);
   statPos.textContent = '—';
 });
@@ -245,16 +267,20 @@ cOv.addEventListener('touchstart', e => {
   isPainting = true;
   const t = e.touches[0];
   const {col, row} = getCell(t);
-  applyTool(col, row);
+  lastCell = {col, row};
+  applyToolSingle(col, row);
+  drawCells();
 }, {passive: false});
 cOv.addEventListener('touchmove', e => {
   e.preventDefault();
   if (!isPainting || !started) return;
   const t = e.touches[0];
   const {col, row} = getCell(t);
-  applyTool(col, row);
+  if (lastCell && lastCell.col === col && lastCell.row === row) return;
+  applyToolLine(lastCell.col, lastCell.row, col, row);
+  lastCell = {col, row};
 }, {passive: false});
-cOv.addEventListener('touchend', () => { isPainting = false; });
+cOv.addEventListener('touchend', () => { isPainting = false; lastCell = null; });
 
 // ── ヒストリー ────────────────────────────────────────
 function pushHistory() {
