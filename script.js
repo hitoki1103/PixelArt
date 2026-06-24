@@ -229,15 +229,15 @@ function brushRowRange(row) {
   return { r1: Math.max(0, row - half), r2: Math.min(rows - 1, row - half + brushSize - 1) };
 }
 
-function hasFilledCellInCols(r, c1, c2) {
+function snapshotHasFilledInCols(snap, r, c1, c2) {
   for (let c = c1; c <= c2; c++) {
-    if (cells[r] && cells[r][c]) return true;
+    if (snap[r] && snap[r][c]) return true;
   }
   return false;
 }
-function hasFilledCellInRows(c, r1, r2) {
+function snapshotHasFilledInRows(snap, c, r1, r2) {
   for (let r = r1; r <= r2; r++) {
-    if (cells[r] && cells[r][c]) return true;
+    if (snap[r] && snap[r][c]) return true;
   }
   return false;
 }
@@ -245,13 +245,14 @@ function hasFilledCellInRows(c, r1, r2) {
 function paintStyle(col, row, value) {
   if (drawStyle === 'col' && (currentTool === 'pen' || currentTool === 'erase')) {
     if (detectLine) {
+      const snap = cells.map(r => [...r]);
       const {c1, c2} = brushColRange(col);
       for (let r = row; r >= 0; r--) {
-        if (hasFilledCellInCols(r, c1, c2)) break;
+        if (snapshotHasFilledInCols(snap, r, c1, c2)) break;
         paintBrush(col, r, value);
       }
       for (let r = row + 1; r < rows; r++) {
-        if (hasFilledCellInCols(r, c1, c2)) break;
+        if (snapshotHasFilledInCols(snap, r, c1, c2)) break;
         paintBrush(col, r, value);
       }
     } else {
@@ -259,13 +260,14 @@ function paintStyle(col, row, value) {
     }
   } else if (drawStyle === 'row' && (currentTool === 'pen' || currentTool === 'erase')) {
     if (detectLine) {
+      const snap = cells.map(r => [...r]);
       const {r1, r2} = brushRowRange(row);
       for (let c = col; c >= 0; c--) {
-        if (hasFilledCellInRows(c, r1, r2)) break;
+        if (snapshotHasFilledInRows(snap, c, r1, r2)) break;
         paintBrush(c, row, value);
       }
       for (let c = col + 1; c < cols; c++) {
-        if (hasFilledCellInRows(c, r1, r2)) break;
+        if (snapshotHasFilledInRows(snap, c, r1, r2)) break;
         paintBrush(c, row, value);
       }
     } else {
