@@ -23,6 +23,7 @@ let isPainting = false;
 let lastCell = null;
 let started = false;
 let brushSize = 1;
+let drawStyle = 'normal';
 
 // ── DOM ───────────────────────────────────────────────
 const cBg  = document.getElementById('canvas-bg');
@@ -203,12 +204,22 @@ function applyToolLine(fromCol, fromRow, toCol, toRow) {
   drawCells();
 }
 
+function paintStyle(col, row, value) {
+  if (drawStyle === 'col' && (currentTool === 'pen' || currentTool === 'erase')) {
+    for (let r = 0; r < rows; r++) paintBrush(col, r, value);
+  } else if (drawStyle === 'row' && (currentTool === 'pen' || currentTool === 'erase')) {
+    for (let c = 0; c < cols; c++) paintBrush(c, row, value);
+  } else {
+    paintBrush(col, row, value);
+  }
+}
+
 function applyToolSingle(col, row) {
   if (col < 0 || col >= cols || row < 0 || row >= rows) return;
   if (currentTool === 'pen') {
-    paintBrush(col, row, currentColor);
+    paintStyle(col, row, currentColor);
   } else if (currentTool === 'erase') {
-    paintBrush(col, row, null);
+    paintStyle(col, row, null);
   } else if (currentTool === 'pick') {
     const c = cells[row][col];
     if (c) { setColor(c); }
@@ -328,6 +339,19 @@ function hexToRgb(hex) {
 }
 colorPicker.addEventListener('input', e => setColor(e.target.value));
 
+// ── 描画スタイル ──────────────────────────────────────
+const drawStyleSection = document.getElementById('draw-style-section');
+document.querySelectorAll('.style-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    drawStyle = b.dataset.style;
+    document.querySelectorAll('.style-btn').forEach(x => x.classList.toggle('active', x.dataset.style === drawStyle));
+  });
+});
+
+function updateDrawStyleVisibility() {
+  drawStyleSection.style.display = currentTool === 'pen' ? '' : 'none';
+}
+
 // ── 描画サイズ ────────────────────────────────────────
 const brushSlider = document.getElementById('brush-slider');
 const brushVal = document.getElementById('brush-val');
@@ -342,6 +366,7 @@ function setTool(t) {
   document.querySelectorAll('.tool-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tool === t);
   });
+  updateDrawStyleVisibility();
 }
 document.querySelectorAll('.tool-btn').forEach(b => {
   b.addEventListener('click', () => setTool(b.dataset.tool));
@@ -609,7 +634,7 @@ const panel = document.getElementById('panel');
 const panelResize = document.getElementById('panel-resize');
 const panelToggle = document.getElementById('panel-toggle');
 const panelBackdrop = document.getElementById('panel-backdrop');
-const MIN_PANEL_W = 240;
+const MIN_PANEL_W = 260;
 let panelCollapsed = false;
 let savedPanelWidth = panel.offsetWidth || 260;
 
