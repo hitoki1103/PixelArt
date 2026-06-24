@@ -519,8 +519,32 @@ document.getElementById('btn-convert').addEventListener('click', () => {
   convertImage(uploadedImage);
 });
 
+function syncSlidersToGrid() {
+  colsSlider.value = cols; colsVal.value = cols;
+  rowsSlider.value = rows; rowsVal.value = rows;
+  const same = cols === rows;
+  bothSlider.value = same ? cols : Math.max(cols, rows);
+  bothVal.value = same ? cols : Math.max(cols, rows);
+  updatePresetHighlight();
+}
+
 function convertImage(img) {
   if (!started) startEditor();
+  const maxDim = Math.max(cols, rows);
+  const aspect = img.width / img.height;
+  let newCols, newRows;
+  if (aspect >= 1) {
+    newCols = maxDim;
+    newRows = Math.max(1, Math.round(maxDim / aspect));
+  } else {
+    newRows = maxDim;
+    newCols = Math.max(1, Math.round(maxDim * aspect));
+  }
+  newCols = Math.min(256, newCols);
+  newRows = Math.min(256, newRows);
+  initCells(newCols, newRows, false);
+  resizeCanvases();
+  syncSlidersToGrid();
   const off = document.createElement('canvas');
   off.width = cols; off.height = rows;
   const ctx = off.getContext('2d');
