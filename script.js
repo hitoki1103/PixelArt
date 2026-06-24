@@ -437,9 +437,10 @@ document.getElementById('btn-zoom-out').addEventListener('click', () => setZoom(
 
 // マウスホイールズーム
 document.getElementById('canvas-area').addEventListener('wheel', e => {
-  if (!e.ctrlKey && !e.metaKey) return;
   e.preventDefault();
-  setZoom(e.deltaY < 0 ? zoom * 1.2 : zoom / 1.2);
+  const delta = -e.deltaY * (e.deltaMode === 1 ? 20 : 1);
+  const factor = 1 + Math.min(Math.abs(delta) * 0.002, 0.15);
+  setZoom(delta > 0 ? zoom * factor : zoom / factor);
 }, {passive: false});
 
 // ── クリア ────────────────────────────────────────────
