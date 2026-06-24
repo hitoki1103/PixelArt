@@ -22,6 +22,7 @@ let uploadedImage = null;
 let isPainting = false;
 let lastCell = null;
 let started = false;
+let brushSize = 1;
 
 // ── DOM ───────────────────────────────────────────────
 const cBg  = document.getElementById('canvas-bg');
@@ -132,16 +133,31 @@ function drawGrid() {
   drawGridLines();
 }
 
+function brushRect(col, row) {
+  const half = Math.floor(brushSize / 2);
+  return {
+    c1: col - half,
+    r1: row - half,
+    c2: col - half + brushSize - 1,
+    r2: row - half + brushSize - 1,
+  };
+}
+
 function drawOverlayCell(col, row) {
   const px = cellPx();
   const ctx = cOv.getContext('2d');
   ctx.clearRect(0, 0, cOv.width, cOv.height);
   if (col < 0 || col >= cols || row < 0 || row >= rows) return;
+  const b = brushRect(col, row);
+  const x1 = Math.max(0, b.c1) * px;
+  const y1 = Math.max(0, b.r1) * px;
+  const x2 = (Math.min(cols - 1, b.c2) + 1) * px;
+  const y2 = (Math.min(rows - 1, b.r2) + 1) * px;
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.fillRect(col * px, row * px, px, px);
+  ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(col * px + 0.5, row * px + 0.5, px - 1, px - 1);
+  ctx.strokeRect(x1 + 0.5, y1 + 0.5, x2 - x1 - 1, y2 - y1 - 1);
 }
 
 // ── イベント：キャンバス ───────────────────────────────
@@ -153,13 +169,24 @@ function getCell(e) {
   return { col: Math.floor(x / px), row: Math.floor(y / px) };
 }
 
+function paintBrush(col, row, value) {
+  const b = brushRect(col, row);
+  for (let r = b.r1; r <= b.r2; r++) {
+    for (let c = b.c1; c <= b.c2; c++) {
+      if (c >= 0 && c < cols && r >= 0 && r < rows) {
+        cells[r][c] = value;
+      }
+    }
+  }
+}
+
 function applyTool(col, row) {
   if (col < 0 || col >= cols || row < 0 || row >= rows) return;
   if (currentTool === 'pen') {
-    cells[row][col] = currentColor;
+    paintBrush(col, row, currentColor);
     drawCells();
   } else if (currentTool === 'erase') {
-    cells[row][col] = null;
+    paintBrush(col, row, null);
     drawCells();
   } else if (currentTool === 'pick') {
     const c = cells[row][col];
@@ -276,6 +303,14 @@ function hexToRgb(hex) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 colorPicker.addEventListener('input', e => setColor(e.target.value));
+
+// ── 描画サイズ ────────────────────────────────────────
+const brushSlider = document.getElementById('brush-slider');
+const brushVal = document.getElementById('brush-val');
+brushSlider.addEventListener('input', () => {
+  brushSize = parseInt(brushSlider.value);
+  brushVal.textContent = brushSize;
+});
 
 // ── ツール選択 ────────────────────────────────────────
 function setTool(t) {
