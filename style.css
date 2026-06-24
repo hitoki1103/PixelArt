@@ -269,6 +269,10 @@ button:disabled { opacity: 0.4; cursor: default; transform: none; }
   -webkit-appearance: none;
   margin: 0;
 }
+.size-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 500;
+}
 
 /* カラーパレット */
 .color-preview {

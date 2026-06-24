@@ -464,6 +464,18 @@ function setSizeAll(v) {
   rowsSlider.value = v; rowsVal.value = v;
 }
 
+function syncBothDisplay() {
+  const c = parseInt(colsSlider.value), r = parseInt(rowsSlider.value);
+  if (c === r) {
+    bothSlider.value = c;
+    bothVal.value = c;
+  } else {
+    bothSlider.value = Math.max(c, r);
+    bothVal.value = '';
+    bothVal.placeholder = '-';
+  }
+}
+
 function updatePresetHighlight() {
   const c = parseInt(colsSlider.value), r = parseInt(rowsSlider.value);
   document.querySelectorAll('.preset-btn').forEach(b => {
@@ -496,16 +508,16 @@ bothVal.addEventListener('change', () => {
   rowsSlider.value = v; rowsVal.value = v;
 });
 
-colsSlider.addEventListener('input', () => { colsVal.value = colsSlider.value; });
+colsSlider.addEventListener('input', () => { colsVal.value = colsSlider.value; syncBothDisplay(); });
 colsVal.addEventListener('change', () => {
   const v = clampSize(colsVal.value);
-  colsVal.value = v; colsSlider.value = v;
+  colsVal.value = v; colsSlider.value = v; syncBothDisplay();
 });
 
-rowsSlider.addEventListener('input', () => { rowsVal.value = rowsSlider.value; });
+rowsSlider.addEventListener('input', () => { rowsVal.value = rowsSlider.value; syncBothDisplay(); });
 rowsVal.addEventListener('change', () => {
   const v = clampSize(rowsVal.value);
-  rowsVal.value = v; rowsSlider.value = v;
+  rowsVal.value = v; rowsSlider.value = v; syncBothDisplay();
 });
 
 document.getElementById('btn-resize').addEventListener('click', () => {
@@ -624,9 +636,7 @@ document.getElementById('btn-convert').addEventListener('click', () => {
 function syncSlidersToGrid() {
   colsSlider.value = cols; colsVal.value = cols;
   rowsSlider.value = rows; rowsVal.value = rows;
-  const same = cols === rows;
-  bothSlider.value = same ? cols : Math.max(cols, rows);
-  bothVal.value = same ? cols : Math.max(cols, rows);
+  syncBothDisplay();
   updatePresetHighlight();
 }
 
