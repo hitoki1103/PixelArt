@@ -332,15 +332,22 @@ cOv.addEventListener('mouseleave',() => {
   statPos.textContent = '—';
 });
 
-// タッチ対応（1本指：描画、2本指：ピンチズーム）
+// タッチ対応（1本指：描画、2本指：ピンチズーム＋パン）
 let pinchStartDist = 0;
 let pinchStartZoom = 1;
 let isPinching = false;
+let pinchStartScrollX = 0, pinchStartScrollY = 0;
+let pinchStartCX = 0, pinchStartCY = 0;
 
 function getTouchDist(e) {
   const t0 = e.touches[0], t1 = e.touches[1];
   const dx = t1.clientX - t0.clientX, dy = t1.clientY - t0.clientY;
   return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getTouchCenter(e) {
+  const t0 = e.touches[0], t1 = e.touches[1];
+  return { x: (t0.clientX + t1.clientX) / 2, y: (t0.clientY + t1.clientY) / 2 };
 }
 
 cOv.addEventListener('touchstart', e => {
@@ -351,6 +358,11 @@ cOv.addEventListener('touchstart', e => {
     isPinching = true;
     pinchStartDist = getTouchDist(e);
     pinchStartZoom = zoom;
+    pinchStartScrollX = canvasArea.scrollLeft;
+    pinchStartScrollY = canvasArea.scrollTop;
+    const ctr = getTouchCenter(e);
+    pinchStartCX = ctr.x;
+    pinchStartCY = ctr.y;
     return;
   }
   if (!started) return;
@@ -369,7 +381,18 @@ cOv.addEventListener('touchmove', e => {
   if (isPinching && e.touches.length >= 2) {
     const dist = getTouchDist(e);
     const scale = dist / pinchStartDist;
-    setZoom(pinchStartZoom * scale);
+    const newZoom = Math.max(0.5, Math.min(8, pinchStartZoom * scale));
+    const zoomRatio = newZoom / pinchStartZoom;
+
+    const ctr = getTouchCenter(e);
+    const areaRect = canvasArea.getBoundingClientRect();
+    const pointX = pinchStartScrollX + (pinchStartCX - areaRect.left);
+    const pointY = pinchStartScrollY + (pinchStartCY - areaRect.top);
+
+    setZoom(newZoom);
+
+    canvasArea.scrollLeft = pointX * zoomRatio - (ctr.x - areaRect.left);
+    canvasArea.scrollTop  = pointY * zoomRatio - (ctr.y - areaRect.top);
     return;
   }
   if (!isPainting || !started) return;
