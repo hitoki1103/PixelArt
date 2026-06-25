@@ -785,6 +785,26 @@ document.getElementById('btn-download').addEventListener('click', () => {
   a.click();
 });
 
+document.getElementById('btn-download-transparent').addEventListener('click', () => {
+  const out = document.createElement('canvas');
+  const px = Math.max(1, Math.round(512 / Math.max(cols, rows)));
+  out.width  = cols * px;
+  out.height = rows * px;
+  const ctx = out.getContext('2d');
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (cells[r][c]) {
+        ctx.fillStyle = cells[r][c];
+        ctx.fillRect(c * px, r * px, px, px);
+      }
+    }
+  }
+  const a = document.createElement('a');
+  a.download = 'pixel-art-transparent.png';
+  a.href = out.toDataURL('image/png');
+  a.click();
+});
+
 // ── 画像変換 ──────────────────────────────────────────
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
