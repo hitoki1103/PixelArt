@@ -372,6 +372,15 @@ document.addEventListener('keydown', e => {
 });
 document.getElementById('btn-undo').addEventListener('click', undo);
 
+// ── 色履歴の位置更新 ──────────────────────────────────
+const colorHistoryEl = document.getElementById('color-history');
+function updateColorHistoryPos() {
+  const rect = canvasArea.getBoundingClientRect();
+  colorHistoryEl.style.left = (rect.left + 10) + 'px';
+  colorHistoryEl.style.bottom = (window.innerHeight - rect.bottom + 10) + 'px';
+}
+window.addEventListener('resize', updateColorHistoryPos);
+
 // ── カラーパレット ────────────────────────────────────
 function buildPalette() {
   const grid = document.getElementById('palette');
@@ -794,6 +803,7 @@ function syncTogglePosition() {
     panelToggle.style.left = (w + handleW) + 'px';
     panelBackdrop.classList.remove('visible');
   }
+  updateColorHistoryPos();
 }
 
 function togglePanel() {
@@ -860,3 +870,4 @@ setColor('#3a3a38');
 initCells(cols, rows, false);
 resizeCanvases();
 syncTogglePosition();
+updateColorHistoryPos();
