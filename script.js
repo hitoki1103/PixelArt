@@ -1244,6 +1244,15 @@ document.addEventListener('mouseup', () => {
   savedPanelWidth = panel.offsetWidth;
 });
 
+// ── キャンバス表示切替 ────────────────────────────────
+let canvasVisible = true;
+document.getElementById('btn-toggle-canvas').addEventListener('click', () => {
+  canvasVisible = !canvasVisible;
+  cBg.style.visibility = canvasVisible ? 'visible' : 'hidden';
+  const btn = document.getElementById('btn-toggle-canvas');
+  btn.classList.toggle('primary', !canvasVisible);
+});
+
 // ── 背景色切替 ────────────────────────────────────────
 document.querySelectorAll('.bg-btn').forEach(b => {
   b.addEventListener('click', () => {
