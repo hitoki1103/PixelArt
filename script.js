@@ -1059,6 +1059,7 @@ function convertImage(img) {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const i = (r * cols + c) * 4;
+      if (data[i+3] < 128) { cells[r][c] = null; continue; }
       cells[r][c] = `#${[data[i],data[i+1],data[i+2]].map(v=>v.toString(16).padStart(2,'0')).join('')}`;
     }
   }
@@ -1080,15 +1081,19 @@ function convertImage(img) {
         const w = Math.round(cw), h = Math.round(ch);
         const map = {};
         let best = 0, bestColor = null;
+        let alphaSum = 0, alphaCount = 0;
         for (let py = y; py < y+h && py < sy; py++) {
           for (let px = x; px < x+w && px < sx; px++) {
             const i = (py * sx + px) * 4;
+            alphaSum += hdata[i+3]; alphaCount++;
+            if (hdata[i+3] < 128) continue;
             const key = ((hdata[i]>>4)<<8)|((hdata[i+1]>>4)<<4)|(hdata[i+2]>>4);
             map[key] = (map[key]||0) + 1;
             if (map[key] > best) { best = map[key]; bestColor = [hdata[i],hdata[i+1],hdata[i+2]]; }
           }
         }
-        if (bestColor) cells[r][c] = `#${bestColor.map(v=>v.toString(16).padStart(2,'0')).join('')}`;
+        if (alphaCount > 0 && alphaSum / alphaCount < 128) { cells[r][c] = null; }
+        else if (bestColor) cells[r][c] = `#${bestColor.map(v=>v.toString(16).padStart(2,'0')).join('')}`;
       }
     }
   }
