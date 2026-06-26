@@ -559,7 +559,7 @@ function hexToRgb(hex) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// ── オリジナルカラーパレット ──────────────────────────
+// ── カスタムカラーパレット ──────────────────────────
 const CUSTOM_PALETTE_SIZE = 48;
 const customPaletteGrid = document.getElementById('custom-palette');
 const customColorPicker = document.getElementById('custom-color-picker');

@@ -333,7 +333,7 @@ button:disabled { opacity: 0.4; cursor: default; transform: none; }
 .swatch:hover { transform: scale(1.15); }
 .swatch.selected { border-color: var(--text); }
 
-/* オリジナルカラーパレット */
+/* カスタムカラーパレット */
 .swatch-empty {
   aspect-ratio: 1;
   border-radius: 3px;
@@ -381,6 +381,10 @@ button:disabled { opacity: 0.4; cursor: default; transform: none; }
 .confirm-modal.modal-top {
   align-items: flex-start;
   padding-top: 10vh;
+}
+.confirm-modal.modal-left {
+  justify-content: flex-start;
+  padding-left: 16px;
 }
 .confirm-card p { font-size: 13px; margin-bottom: 14px; }
 .color-pick-input {
