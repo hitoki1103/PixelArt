@@ -733,13 +733,15 @@ function applyFreeRangeSelection(path, endCol, endRow) {
   if (!path.length) return;
   const start = path[0];
   const releasedAtStart = endCol === start.col && endRow === start.row;
-  if (!releasedAtStart && !rangeAutoCloseCheckbox.checked) {
-    // 始点に戻らず終了したので選択を確定しない
-    return;
-  }
   const traced = Array.from({length: rows}, () => Array(cols).fill(false));
   const markCell = (c, r) => { if (c >= 0 && c < cols && r >= 0 && r < rows) traced[r][c] = true; };
   for (const p of path) markCell(p.col, p.row);
+  if (!releasedAtStart && !rangeAutoCloseCheckbox.checked) {
+    // 始点に戻らず終了したので、なぞった軌跡のみを選択する
+    selectionMask = traced;
+    updateSelectionButtons();
+    return;
+  }
   if (!releasedAtStart) {
     for (const p of interpolateCells(endCol, endRow, start.col, start.row)) markCell(p.col, p.row);
   }
